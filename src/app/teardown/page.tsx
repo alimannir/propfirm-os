@@ -32,7 +32,11 @@ export default function TeardownPage() {
   const [copiedTouch1Alt, setCopiedTouch1Alt] = useState(false);
   const [copiedTouch2, setCopiedTouch2] = useState(false);
   const [isExportMode, setIsExportMode] = useState(false);
-  const [showPlaybook, setShowPlaybook] = useState(false);
+  
+  // Operator Authentication Gate State
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [passcodeInput, setPasscodeInput] = useState('');
+  const [passcodeError, setPasscodeError] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -47,20 +51,48 @@ export default function TeardownPage() {
         setLayoutFormat('mobile');
       }
 
-      // Admin access check (Hidden from clients by default)
-      const isAdminParam = params.get('admin') === '1' || params.get('playbook') === '1';
-      const isClientParam = params.get('client') === '1';
-      if (isClientParam) {
-        localStorage.removeItem('propfirm_admin');
-        setShowPlaybook(false);
-      } else if (isAdminParam) {
-        localStorage.setItem('propfirm_admin', 'true');
-        setShowPlaybook(true);
-      } else if (localStorage.getItem('propfirm_admin') === 'true') {
-        setShowPlaybook(true);
+      // Check URL secret passcodes: ?pass=8849, ?key=8849, ?admin=8849 or ?admin=1
+      const passParam = params.get('pass') || params.get('key') || params.get('admin');
+      const validPasscodes = ['8849', 'propfirm2026', 'admin', '1'];
+
+      if (params.get('lock') === '1') {
+        localStorage.removeItem('propfirm_operator_auth');
+        setIsAuthenticated(false);
+        return;
+      }
+
+      if (passParam && validPasscodes.includes(passParam)) {
+        localStorage.setItem('propfirm_operator_auth', 'true');
+        setIsAuthenticated(true);
+      } else if (localStorage.getItem('propfirm_operator_auth') === 'true') {
+        setIsAuthenticated(true);
+      } else {
+        setIsAuthenticated(false);
       }
     }
   }, []);
+
+  const handleUnlock = (e: React.FormEvent) => {
+    e.preventDefault();
+    const valid = ['8849', 'propfirm2026', 'admin'];
+    if (valid.includes(passcodeInput.trim())) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('propfirm_operator_auth', 'true');
+      }
+      setIsAuthenticated(true);
+      setPasscodeError(false);
+    } else {
+      setPasscodeError(true);
+    }
+  };
+
+  const handleLock = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('propfirm_operator_auth');
+      setIsAuthenticated(false);
+      setPasscodeInput('');
+    }
+  };
 
   // Optimized High-Converting Scripts (Under 50 words · Peer-to-peer · Zero agency fluff)
   const touch1Copy = `Hey [Name] — quick question:
@@ -623,8 +655,83 @@ Worth an 8-minute walkthrough Thursday or Friday to show you how this plugs into
     </div>
   );
 
-  // Clean export mode for headless Chrome capture
-  if (isExportMode) {
+  // Loading state while checking localStorage/query
+  if (isAuthenticated === null) {
+    return (
+      <div className="min-h-screen bg-[#090a0c] flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Operator Lock Screen for unauthorized visitors
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#090a0c] text-zinc-100 font-sans selection:bg-white/20 selection:text-white flex flex-col items-center justify-center p-4">
+        <div className="max-w-md w-full p-6 sm:p-8 rounded-3xl bg-[#121316] border border-white/[0.08] shadow-2xl text-center space-y-6">
+          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto">
+            <Lock className="w-7 h-7" />
+          </div>
+
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-mono uppercase tracking-widest text-amber-400 font-bold px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">
+              Restricted Operator Console
+            </span>
+            <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight pt-1">
+              Internal Teardown &amp; Playbook
+            </h1>
+            <p className="text-xs text-zinc-400 font-mono leading-relaxed pt-1">
+              This area contains internal cold outreach scripts and 1st-challenge leak architecture. Enter operator passcode to unlock.
+            </p>
+          </div>
+
+          <form onSubmit={handleUnlock} className="space-y-3 font-mono">
+            <div className="space-y-1 text-left">
+              <label className="text-[10px] uppercase text-zinc-500 font-bold tracking-wider block">
+                Operator Passcode
+              </label>
+              <input
+                type="password"
+                placeholder="Enter passcode (e.g. 8849)..."
+                value={passcodeInput}
+                onChange={(e) => {
+                  setPasscodeInput(e.target.value);
+                  setPasscodeError(false);
+                }}
+                className="w-full px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-white text-center text-sm focus:outline-none focus:border-amber-400 transition-colors"
+                autoFocus
+              />
+            </div>
+
+            {passcodeError && (
+              <p className="text-xs text-rose-400 font-mono">
+                ⚠ Incorrect passcode. Please try again.
+              </p>
+            )}
+
+            <button
+              type="submit"
+              className="w-full py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-bold text-xs flex items-center justify-center space-x-2 transition-colors cursor-pointer shadow-md"
+            >
+              <Key className="w-3.5 h-3.5" />
+              <span>Unlock Teardown Assets</span>
+            </button>
+          </form>
+
+          <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] font-mono text-zinc-500">
+            <Link href="/" className="hover:text-zinc-300 transition-colors flex items-center space-x-1">
+              <ArrowLeft className="w-3 h-3" />
+              <span>Public Live Sandbox</span>
+            </Link>
+            <span>PropFirm OS v2.4</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Pure Export Mode (Only for authenticated operator generating screenshots)
+  if (isExportMode && isAuthenticated) {
     return (
       <div className={`min-h-screen ${isDark ? 'bg-[#09090b]' : 'bg-[#f1f5f9]'} flex items-center justify-center p-4`}>
         <style dangerouslySetInnerHTML={{ __html: `nextjs-portal, [data-nextjs-toast], [data-nextjs-dialog-overlay] { display: none !important; }` }} />
@@ -644,11 +751,11 @@ Worth an 8-minute walkthrough Thursday or Friday to show you how this plugs into
             className={`flex items-center space-x-1.5 text-xs font-medium transition-colors ${isDark ? 'text-zinc-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Back to App</span>
+            <span>Sandbox</span>
           </Link>
           <span className={isDark ? 'text-zinc-600' : 'text-slate-300'}>/</span>
           <span className="font-semibold text-xs">
-            1st-Challenge Acquisition Leak Teardown (Touch 2 Deliverable)
+            Operator Console · Teardown &amp; Outreach Assets
           </span>
         </div>
 
@@ -706,6 +813,18 @@ Worth an 8-minute walkthrough Thursday or Friday to show you how this plugs into
             <Download className="w-3.5 h-3.5" />
             <span>Download {layoutFormat === 'mobile' ? 'Mobile PNG' : 'Desktop PNG'}</span>
           </a>
+
+          {/* Lock Button */}
+          <button
+            onClick={handleLock}
+            className={`px-2.5 py-1.5 rounded-lg border flex items-center space-x-1 font-mono text-xs transition-colors cursor-pointer ${
+              isDark ? 'bg-zinc-900 border-white/10 text-zinc-400 hover:text-rose-400 hover:border-rose-500/30' : 'bg-slate-100 border-slate-200 text-slate-600 hover:text-rose-600'
+            }`}
+            title="Lock Operator Access"
+          >
+            <Lock className="w-3 h-3" />
+            <span className="hidden sm:inline">Lock</span>
+          </button>
         </div>
       </header>
 
@@ -716,88 +835,18 @@ Worth an 8-minute walkthrough Thursday or Friday to show you how this plugs into
         {layoutFormat === 'mobile' ? <MobilePortraitGraphic /> : <DesktopTreeGraphic />}
 
         {/* ======================================================== */}
-        {/* CLIENT VIEW: Sleek B2B CTA (Default for any prospect) */}
+        {/* OPERATOR PLAYBOOK: High-Converting Outreach Scripts */}
         {/* ======================================================== */}
-        {!showPlaybook && (
-          <div className={`p-6 sm:p-8 rounded-3xl border text-center space-y-4 max-w-2xl mx-auto shadow-xl ${
-            isDark ? 'bg-[#121316] border-white/10' : 'bg-white border-slate-200'
-          }`}>
-            <span className="text-[11px] font-mono uppercase tracking-wider text-emerald-400 font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-              Zero-Code Webhook Integration
-            </span>
-            <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight">
-              Ready to Stop 1st-Challenge Churn on Your MT5 Fleet?
+        <div className="space-y-6 max-w-[1240px] mx-auto pt-6 border-t border-white/[0.08]">
+          
+          <div className="flex items-center space-x-2">
+            <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
+            <h2 className="text-sm font-mono font-bold uppercase tracking-wider text-white">
+              Cold Outreach DM Scripts (Under 50 Words · Peer-to-Peer · Click to Copy)
             </h2>
-            <p className={`text-xs sm:text-sm max-w-lg mx-auto font-mono ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-              Plugs into your MT5, cTrader, or DXTrade server in 48 hours via read-only trade event webhooks. Zero custom development required on your side.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-              <Link
-                href="/?tab=breached"
-                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-bold text-xs flex items-center justify-center space-x-2 transition-colors cursor-pointer shadow-md"
-              >
-                <span>Launch Interactive Sandbox</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-              <Link
-                href="/?tab=admin"
-                className={`w-full sm:w-auto px-5 py-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center space-x-2 transition-colors cursor-pointer ${
-                  isDark ? 'bg-zinc-900 border-white/10 text-white hover:bg-zinc-800' : 'bg-slate-100 border-slate-300 text-slate-800 hover:bg-slate-200'
-                }`}
-              >
-                <span>View Unit Economics</span>
-              </Link>
-            </div>
-
-            {/* Subtle Admin Unlock Toggle */}
-            <div className="pt-4 border-t border-white/[0.04] flex items-center justify-center">
-              <button
-                onClick={() => {
-                  if (typeof window !== 'undefined') {
-                    localStorage.setItem('propfirm_admin', 'true');
-                    setShowPlaybook(true);
-                  }
-                }}
-                className="text-[10px] font-mono text-zinc-600 hover:text-zinc-400 flex items-center space-x-1 transition-colors cursor-pointer"
-                title="Admin Access"
-              >
-                <Lock className="w-3 h-3" />
-                <span>Admin Playbook</span>
-              </button>
-            </div>
           </div>
-        )}
 
-        {/* ======================================================== */}
-        {/* ADMIN VIEW ONLY: High-Converting Outreach Playbook */}
-        {/* ======================================================== */}
-        {showPlaybook && (
-          <div className="space-y-6 max-w-[1240px] mx-auto pt-2">
-            
-            {/* Admin Header Banner */}
-            <div className={`p-4 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
-              isDark ? 'bg-amber-950/20 border-amber-500/30 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-900'
-            }`}>
-              <div className="flex items-center space-x-2">
-                <Lock className="w-4 h-4 text-amber-400 shrink-0" />
-                <span className="text-xs font-mono font-bold uppercase tracking-wider">
-                  Internal Outreach Playbook (Admin Only · Hidden from Prospective Clients)
-                </span>
-              </div>
-              <button
-                onClick={() => {
-                  if (typeof window !== 'undefined') {
-                    localStorage.removeItem('propfirm_admin');
-                    setShowPlaybook(false);
-                  }
-                }}
-                className="text-xs font-mono underline opacity-80 hover:opacity-100 cursor-pointer"
-              >
-                Switch to Client Preview
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               
               {/* Card 1: Touch 1 Standard Churn Hook */}
               <div className={`p-5 rounded-2xl border flex flex-col justify-between ${isDark ? 'bg-[#121316] border-white/[0.08]' : 'bg-white border-slate-200 shadow-sm'}`}>
@@ -894,7 +943,6 @@ Worth an 8-minute walkthrough Thursday or Friday to show you how this plugs into
 
             </div>
           </div>
-        )}
 
       </main>
     </div>

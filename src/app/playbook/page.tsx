@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   ArrowLeft, 
@@ -12,13 +12,66 @@ import {
   MessageSquare, 
   Sparkles,
   Smartphone,
-  Monitor
+  Monitor,
+  Lock,
+  Key,
+  ArrowRight
 } from 'lucide-react';
 
 export default function PlaybookPage() {
   const [copiedTouch1, setCopiedTouch1] = useState(false);
   const [copiedTouch1Alt, setCopiedTouch1Alt] = useState(false);
   const [copiedTouch2, setCopiedTouch2] = useState(false);
+
+  // Operator Authentication Gate State
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [passcodeInput, setPasscodeInput] = useState('');
+  const [passcodeError, setPasscodeError] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const passParam = params.get('pass') || params.get('key') || params.get('admin');
+      const validPasscodes = ['8849', 'propfirm2026', 'admin', '1'];
+
+      if (params.get('lock') === '1') {
+        localStorage.removeItem('propfirm_operator_auth');
+        setIsAuthenticated(false);
+        return;
+      }
+
+      if (passParam && validPasscodes.includes(passParam)) {
+        localStorage.setItem('propfirm_operator_auth', 'true');
+        setIsAuthenticated(true);
+      } else if (localStorage.getItem('propfirm_operator_auth') === 'true') {
+        setIsAuthenticated(true);
+      } else {
+        setIsAuthenticated(false);
+      }
+    }
+  }, []);
+
+  const handleUnlock = (e: React.FormEvent) => {
+    e.preventDefault();
+    const valid = ['8849', 'propfirm2026', 'admin'];
+    if (valid.includes(passcodeInput.trim())) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('propfirm_operator_auth', 'true');
+      }
+      setIsAuthenticated(true);
+      setPasscodeError(false);
+    } else {
+      setPasscodeError(true);
+    }
+  };
+
+  const handleLock = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('propfirm_operator_auth');
+      setIsAuthenticated(false);
+      setPasscodeInput('');
+    }
+  };
 
   const touch1Copy = `Hey [Name] — quick question:
 
@@ -47,6 +100,81 @@ Worth an 8-minute walkthrough Thursday or Friday to show you how this plugs into
     }
   };
 
+  // Loading state while checking localStorage/query
+  if (isAuthenticated === null) {
+    return (
+      <div className="min-h-screen bg-[#090a0c] flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Operator Lock Screen for unauthorized visitors
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#090a0c] text-zinc-100 font-sans selection:bg-white/20 selection:text-white flex flex-col items-center justify-center p-4">
+        <div className="max-w-md w-full p-6 sm:p-8 rounded-3xl bg-[#121316] border border-white/[0.08] shadow-2xl text-center space-y-6">
+          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto">
+            <Lock className="w-7 h-7" />
+          </div>
+
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-mono uppercase tracking-widest text-amber-400 font-bold px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">
+              Restricted Operator Console
+            </span>
+            <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight pt-1">
+              Internal Outreach Playbook
+            </h1>
+            <p className="text-xs text-zinc-400 font-mono leading-relaxed pt-1">
+              This area contains internal cold outreach scripts and sequence templates. Enter operator passcode to unlock.
+            </p>
+          </div>
+
+          <form onSubmit={handleUnlock} className="space-y-3 font-mono">
+            <div className="space-y-1 text-left">
+              <label className="text-[10px] uppercase text-zinc-500 font-bold tracking-wider block">
+                Operator Passcode
+              </label>
+              <input
+                type="password"
+                placeholder="Enter passcode (e.g. 8849)..."
+                value={passcodeInput}
+                onChange={(e) => {
+                  setPasscodeInput(e.target.value);
+                  setPasscodeError(false);
+                }}
+                className="w-full px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-white text-center text-sm focus:outline-none focus:border-amber-400 transition-colors"
+                autoFocus
+              />
+            </div>
+
+            {passcodeError && (
+              <p className="text-xs text-rose-400 font-mono">
+                ⚠ Incorrect passcode. Please try again.
+              </p>
+            )}
+
+            <button
+              type="submit"
+              className="w-full py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-bold text-xs flex items-center justify-center space-x-2 transition-colors cursor-pointer shadow-md"
+            >
+              <Key className="w-3.5 h-3.5" />
+              <span>Unlock Outreach Playbook</span>
+            </button>
+          </form>
+
+          <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] font-mono text-zinc-500">
+            <Link href="/" className="hover:text-zinc-300 transition-colors flex items-center space-x-1">
+              <ArrowLeft className="w-3 h-3" />
+              <span>Public Live Sandbox</span>
+            </Link>
+            <span>PropFirm OS v2.4</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#090a0c] text-zinc-100 font-sans selection:bg-white/20 selection:text-white flex flex-col">
       
@@ -59,22 +187,32 @@ Worth an 8-minute walkthrough Thursday or Friday to show you how this plugs into
               className="flex items-center space-x-1.5 text-xs text-zinc-400 hover:text-white transition-colors"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to Teardown</span>
+              <span>Teardown Graphic</span>
             </Link>
             <span className="text-zinc-600">/</span>
             <span className="font-bold text-xs text-white font-mono">
-              Outreach Playbook (Admin Only)
+              Operator Outreach Playbook
             </span>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2.5">
             <Link
-              href="/?tab=breached"
+              href="/"
               className="text-[11px] font-mono px-2.5 py-1 rounded-lg bg-zinc-900 border border-white/10 text-zinc-300 hover:text-white flex items-center space-x-1 transition-colors"
             >
-              <span>Sandbox</span>
+              <span>Live Sandbox</span>
               <ExternalLink className="w-3 h-3 text-zinc-500" />
             </Link>
+
+            {/* Lock Button */}
+            <button
+              onClick={handleLock}
+              className="px-2.5 py-1 rounded-lg border border-white/10 bg-zinc-900 hover:border-rose-500/30 text-zinc-400 hover:text-rose-400 font-mono text-xs flex items-center space-x-1 transition-colors cursor-pointer"
+              title="Lock Operator Access"
+            >
+              <Lock className="w-3 h-3" />
+              <span>Lock</span>
+            </button>
           </div>
         </div>
       </header>
@@ -87,7 +225,7 @@ Worth an 8-minute walkthrough Thursday or Friday to show you how this plugs into
           <div>
             <div className="flex items-center space-x-2">
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 font-bold uppercase tracking-wider border border-amber-500/20">
-                Private Swipe File
+                Private Operator Swipe File
               </span>
               <span className="text-xs text-zinc-400 font-mono">
                 Hidden from clients
@@ -220,4 +358,3 @@ Worth an 8-minute walkthrough Thursday or Friday to show you how this plugs into
     </div>
   );
 }
-

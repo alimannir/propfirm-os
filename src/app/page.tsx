@@ -149,7 +149,7 @@ function SandboxApp() {
       <header className="border-b border-white/[0.08] bg-[#0c0d10]/95 backdrop-blur-md sticky top-0 z-50 w-full">
         <div className="max-w-6xl mx-auto px-3 sm:px-6 py-2.5 sm:py-0 sm:h-14 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4">
           
-          {/* Top Row on Mobile: Brand + 1-Page Teardown Link */}
+          {/* Top Row on Mobile: Brand Header */}
           <div className="flex items-center justify-between w-full sm:w-auto">
             <div className="flex items-center space-x-2 shrink-0">
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -161,14 +161,10 @@ function SandboxApp() {
               </span>
             </div>
 
-            {/* Link to 1-Page Teardown */}
-            <Link
-              href="/teardown"
-              className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-medium bg-zinc-900 border border-white/10 hover:bg-zinc-800 text-zinc-300 transition-colors shrink-0"
-            >
-              <FileText className="w-3.5 h-3.5 text-zinc-400" />
-              <span>Teardown</span>
-            </Link>
+            <div className="flex sm:hidden items-center space-x-1.5 text-[10px] font-mono text-zinc-500">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              <span>Broker Sync Live</span>
+            </div>
           </div>
 
           {/* Clean 4-Tab Switcher: 4 equal columns on mobile */}
