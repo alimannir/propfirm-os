@@ -19,15 +19,20 @@ import {
   Sparkles,
   ArrowRight,
   Smartphone,
-  Monitor
+  Monitor,
+  Lock,
+  Unlock,
+  Key
 } from 'lucide-react';
 
 export default function TeardownPage() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [layoutFormat, setLayoutFormat] = useState<'desktop' | 'mobile'>('desktop');
   const [copiedTouch1, setCopiedTouch1] = useState(false);
+  const [copiedTouch1Alt, setCopiedTouch1Alt] = useState(false);
   const [copiedTouch2, setCopiedTouch2] = useState(false);
   const [isExportMode, setIsExportMode] = useState(false);
+  const [showPlaybook, setShowPlaybook] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -41,30 +46,41 @@ export default function TeardownPage() {
       if (params.get('format') === 'mobile' || (!params.get('format') && window.innerWidth < 768)) {
         setLayoutFormat('mobile');
       }
+
+      // Admin access check (Hidden from clients by default)
+      const isAdminParam = params.get('admin') === '1' || params.get('playbook') === '1';
+      const isClientParam = params.get('client') === '1';
+      if (isClientParam) {
+        localStorage.removeItem('propfirm_admin');
+        setShowPlaybook(false);
+      } else if (isAdminParam) {
+        localStorage.setItem('propfirm_admin', 'true');
+        setShowPlaybook(true);
+      } else if (localStorage.getItem('propfirm_admin') === 'true') {
+        setShowPlaybook(true);
+      }
     }
   }, []);
 
+  // Optimized High-Converting Scripts (Under 50 words · Peer-to-peer · Zero agency fluff)
   const touch1Copy = `Hey [Name] — quick question:
 
-When a trader blows their 1st challenge on your MT5/cTrader, what percentage actually buy a reset vs just walking away to another firm?
+When a trader blows their 1st challenge on your MT5, what % actually buy a reset vs churn to another firm?
 
-Most operators I talk to lose 90%+ of their paid CAC right there because traders get frustrated, blame slippage, and churn to a competitor.
+Mapped out a 1-page visual teardown showing how 3 trade-event loops turn that dropoff into repeat margin at $0 CAC. Cool if I drop the image here?`;
 
-We put together a clean 1-page visual breakdown showing how firms turn that 1st-challenge dropoff into repeat margin using automated trade data loops (with $0 added ad spend).
+  const touch1AltCopy = `Hey [Name] — when a trader breaches drawdown on your MT5 and complains about broker slippage, how are you guys handling the dispute so they reset instead of filing a chargeback?
 
-Mind if I send the image over?`;
+Put together a clean 1-page breakdown showing how to automate the fair execution audit + 1-click reset. Mind if I send the image over?`;
 
-  const touch2Copy = `Here's the 1-page breakdown [Name] (attached image):
+  const touch2Copy = `[Name] — here's the 1-page breakdown:
 
-It plugs into your MT5/cTrader feed to automate 3 retention loops:
-1. Active session: Sends personalized daily trading notes & encouragement citing their real fills, plus periodic account upsells.
-2. On breach: Proves execution was fair (no broker slippage), highlights what they did well vs where they slipped, and gives an instant 1-click reset.
-3. On pass: Celebrates verified win-rate milestones and offers immediate scaling upgrades while confidence is peak.
+(Attached image)
 
-Spun up a live interactive sandbox where you can test each loop yourself:
-👉 [YOUR_SANDBOX_URL]
+Spun up an interactive sandbox where you can test the 1-click breach reset and fair fill benchmark here:
+👉 https://propfirm-os-abst.vercel.app/?tab=breached
 
-Open to a quick 10-minute sandbox run on your demo server next week?`;
+Worth an 8-minute walkthrough Thursday or Friday to show you how this plugs into your broker feed with zero dev work on your end?`;
 
   const handleCopy = (text: string, setter: (val: boolean) => void) => {
     if (typeof window !== 'undefined') {
@@ -699,72 +715,186 @@ Open to a quick 10-minute sandbox run on your demo server next week?`;
         {/* Render the Selected Graphic */}
         {layoutFormat === 'mobile' ? <MobilePortraitGraphic /> : <DesktopTreeGraphic />}
 
-        {/* Copy-Paste Outreach DM Scripts */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-[1240px] mx-auto pt-2">
-          
-          {/* Touch 1 Card */}
-          <div className={`p-6 rounded-2xl border flex flex-col justify-between ${isDark ? 'bg-[#121316] border-white/[0.08]' : 'bg-white border-slate-200 shadow-sm'}`}>
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-mono uppercase tracking-wider font-semibold opacity-75">
-                  Touch 1 · Problem Hook DM (No Links)
-                </span>
-                <button
-                  onClick={() => handleCopy(touch1Copy, setCopiedTouch1)}
-                  className={`px-2.5 py-1 rounded text-xs font-mono flex items-center space-x-1 cursor-pointer transition-colors ${
-                    isDark ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                  }`}
-                >
-                  {copiedTouch1 ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-                  <span>{copiedTouch1 ? 'Copied' : 'Copy'}</span>
-                </button>
-              </div>
-              <h3 className={`text-base font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                Step 1: Hit Their Biggest Pain Point
-              </h3>
-              <p className={`text-xs mb-4 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-                Zero sales jargon. Casual peer-to-peer question that lands straight in primary inbox:
-              </p>
-              <pre className={`p-4 rounded-xl border text-xs font-sans whitespace-pre-wrap leading-relaxed ${
-                isDark ? 'bg-[#0f1012] border-white/[0.04] text-zinc-300' : 'bg-slate-50 border-slate-200 text-slate-700'
-              }`}>
-                {touch1Copy}
-              </pre>
+        {/* ======================================================== */}
+        {/* CLIENT VIEW: Sleek B2B CTA (Default for any prospect) */}
+        {/* ======================================================== */}
+        {!showPlaybook && (
+          <div className={`p-6 sm:p-8 rounded-3xl border text-center space-y-4 max-w-2xl mx-auto shadow-xl ${
+            isDark ? 'bg-[#121316] border-white/10' : 'bg-white border-slate-200'
+          }`}>
+            <span className="text-[11px] font-mono uppercase tracking-wider text-emerald-400 font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+              Zero-Code Webhook Integration
+            </span>
+            <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight">
+              Ready to Stop 1st-Challenge Churn on Your MT5 Fleet?
+            </h2>
+            <p className={`text-xs sm:text-sm max-w-lg mx-auto font-mono ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+              Plugs into your MT5, cTrader, or DXTrade server in 48 hours via read-only trade event webhooks. Zero custom development required on your side.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+              <Link
+                href="/?tab=breached"
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-bold text-xs flex items-center justify-center space-x-2 transition-colors cursor-pointer shadow-md"
+              >
+                <span>Launch Interactive Sandbox</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+              <Link
+                href="/?tab=admin"
+                className={`w-full sm:w-auto px-5 py-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center space-x-2 transition-colors cursor-pointer ${
+                  isDark ? 'bg-zinc-900 border-white/10 text-white hover:bg-zinc-800' : 'bg-slate-100 border-slate-300 text-slate-800 hover:bg-slate-200'
+                }`}
+              >
+                <span>View Unit Economics</span>
+              </Link>
+            </div>
+
+            {/* Subtle Admin Unlock Toggle */}
+            <div className="pt-4 border-t border-white/[0.04] flex items-center justify-center">
+              <button
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    localStorage.setItem('propfirm_admin', 'true');
+                    setShowPlaybook(true);
+                  }
+                }}
+                className="text-[10px] font-mono text-zinc-600 hover:text-zinc-400 flex items-center space-x-1 transition-colors cursor-pointer"
+                title="Admin Access"
+              >
+                <Lock className="w-3 h-3" />
+                <span>Admin Playbook</span>
+              </button>
             </div>
           </div>
+        )}
 
-          {/* Touch 2 Card */}
-          <div className={`p-6 rounded-2xl border flex flex-col justify-between ${isDark ? 'bg-[#121316] border-white/[0.08]' : 'bg-white border-slate-200 shadow-sm'}`}>
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-mono uppercase tracking-wider font-semibold opacity-75">
-                  Touch 2 · Attach Teardown + Sandbox Link
+        {/* ======================================================== */}
+        {/* ADMIN VIEW ONLY: High-Converting Outreach Playbook */}
+        {/* ======================================================== */}
+        {showPlaybook && (
+          <div className="space-y-6 max-w-[1240px] mx-auto pt-2">
+            
+            {/* Admin Header Banner */}
+            <div className={`p-4 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
+              isDark ? 'bg-amber-950/20 border-amber-500/30 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-900'
+            }`}>
+              <div className="flex items-center space-x-2">
+                <Lock className="w-4 h-4 text-amber-400 shrink-0" />
+                <span className="text-xs font-mono font-bold uppercase tracking-wider">
+                  Internal Outreach Playbook (Admin Only · Hidden from Prospective Clients)
                 </span>
-                <button
-                  onClick={() => handleCopy(touch2Copy, setCopiedTouch2)}
-                  className={`px-2.5 py-1 rounded text-xs font-mono flex items-center space-x-1 cursor-pointer transition-colors ${
-                    isDark ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                  }`}
-                >
-                  {copiedTouch2 ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-                  <span>{copiedTouch2 ? 'Copied' : 'Copy'}</span>
-                </button>
               </div>
-              <h3 className={`text-base font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                Step 2: Send when they reply &ldquo;Sure&rdquo;
-              </h3>
-              <p className={`text-xs mb-4 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-                Attach the mobile-optimized image (fills full screen on their phone) + live sandbox link:
-              </p>
-              <pre className={`p-4 rounded-xl border text-xs font-sans whitespace-pre-wrap leading-relaxed ${
-                isDark ? 'bg-[#0f1012] border-white/[0.04] text-zinc-300' : 'bg-slate-50 border-slate-200 text-slate-700'
-              }`}>
-                {touch2Copy}
-              </pre>
+              <button
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    localStorage.removeItem('propfirm_admin');
+                    setShowPlaybook(false);
+                  }
+                }}
+                className="text-xs font-mono underline opacity-80 hover:opacity-100 cursor-pointer"
+              >
+                Switch to Client Preview
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              
+              {/* Card 1: Touch 1 Standard Churn Hook */}
+              <div className={`p-5 rounded-2xl border flex flex-col justify-between ${isDark ? 'bg-[#121316] border-white/[0.08]' : 'bg-white border-slate-200 shadow-sm'}`}>
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-blue-400 px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">
+                      Touch 1 · Standard Churn
+                    </span>
+                    <button
+                      onClick={() => handleCopy(touch1Copy, setCopiedTouch1)}
+                      className={`px-2.5 py-1 rounded text-xs font-mono flex items-center space-x-1 cursor-pointer transition-colors ${
+                        isDark ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      {copiedTouch1 ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                      <span>{copiedTouch1 ? 'Copied' : 'Copy'}</span>
+                    </button>
+                  </div>
+                  <h3 className={`text-sm font-bold mb-1.5 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    The 45-Word Operator Hook
+                  </h3>
+                  <p className={`text-[11px] mb-3 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                    Fast peer-to-peer message for Twitter &amp; Telegram DMs (ends with micro-commitment ask):
+                  </p>
+                  <pre className={`p-3.5 rounded-xl border text-xs font-sans whitespace-pre-wrap leading-relaxed ${
+                    isDark ? 'bg-[#0f1012] border-white/[0.04] text-zinc-300' : 'bg-slate-50 border-slate-200 text-slate-700'
+                  }`}>
+                    {touch1Copy}
+                  </pre>
+                </div>
+              </div>
+
+              {/* Card 2: Touch 1 Alt Execution/Slippage Hook */}
+              <div className={`p-5 rounded-2xl border flex flex-col justify-between ${isDark ? 'bg-[#121316] border-white/[0.08]' : 'bg-white border-slate-200 shadow-sm'}`}>
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-amber-400 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">
+                      Touch 1 · Slippage / Disputes
+                    </span>
+                    <button
+                      onClick={() => handleCopy(touch1AltCopy, setCopiedTouch1Alt)}
+                      className={`px-2.5 py-1 rounded text-xs font-mono flex items-center space-x-1 cursor-pointer transition-colors ${
+                        isDark ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      {copiedTouch1Alt ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                      <span>{copiedTouch1Alt ? 'Copied' : 'Copy'}</span>
+                    </button>
+                  </div>
+                  <h3 className={`text-sm font-bold mb-1.5 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    The Chargeback Hook
+                  </h3>
+                  <p className={`text-[11px] mb-3 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                    Best for CEOs battling Trustpilot reviews or broker slippage complaints:
+                  </p>
+                  <pre className={`p-3.5 rounded-xl border text-xs font-sans whitespace-pre-wrap leading-relaxed ${
+                    isDark ? 'bg-[#0f1012] border-white/[0.04] text-zinc-300' : 'bg-slate-50 border-slate-200 text-slate-700'
+                  }`}>
+                    {touch1AltCopy}
+                  </pre>
+                </div>
+              </div>
+
+              {/* Card 3: Touch 2 Deliverable + 8-Min Ask */}
+              <div className={`p-5 rounded-2xl border flex flex-col justify-between ${isDark ? 'bg-[#121316] border-white/[0.08]' : 'bg-white border-slate-200 shadow-sm'}`}>
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-emerald-400 px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">
+                      Touch 2 · Image + Demo Ask
+                    </span>
+                    <button
+                      onClick={() => handleCopy(touch2Copy, setCopiedTouch2)}
+                      className={`px-2.5 py-1 rounded text-xs font-mono flex items-center space-x-1 cursor-pointer transition-colors ${
+                        isDark ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      {copiedTouch2 ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                      <span>{copiedTouch2 ? 'Copied' : 'Copy'}</span>
+                    </button>
+                  </div>
+                  <h3 className={`text-sm font-bold mb-1.5 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    Send When They Say &ldquo;Sure&rdquo;
+                  </h3>
+                  <p className={`text-[11px] mb-3 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                    Attach the mobile graphic + send this clean message with zero bullet clutter:
+                  </p>
+                  <pre className={`p-3.5 rounded-xl border text-xs font-sans whitespace-pre-wrap leading-relaxed ${
+                    isDark ? 'bg-[#0f1012] border-white/[0.04] text-zinc-300' : 'bg-slate-50 border-slate-200 text-slate-700'
+                  }`}>
+                    {touch2Copy}
+                  </pre>
+                </div>
+              </div>
+
             </div>
           </div>
-
-        </div>
+        )}
 
       </main>
     </div>
