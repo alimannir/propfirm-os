@@ -38,7 +38,7 @@ export default function TeardownPage() {
       if (params.get('theme') === 'light') {
         setTheme('light');
       }
-      if (params.get('format') === 'mobile') {
+      if (params.get('format') === 'mobile' || (!params.get('format') && window.innerWidth < 768)) {
         setLayoutFormat('mobile');
       }
     }
